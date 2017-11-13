@@ -1,0 +1,301 @@
+---
+title: 'INFX 576: Problem Set 1 - Network Data and Node-Level Indices\footnote{Problems originally written by C.T. Butts (2009)}'
+author: "Jay Chauhan"
+date: 'Due: Thursday, January 19, 2017'
+output: pdf_document
+---
+<!-- This syntax can be used to add comments that are ignored during knitting process. -->
+
+##### Collaborators: Avanti Chande, Gosuddin Siddiqi
+
+##### Instructions: #####
+
+Before beginning this assignment, please ensure you have access to R and RStudio. 
+
+1. Download the `problemset1.Rmd` file from Canvas. Open `problemset1.Rmd` in RStudio and supply your solutions to the assignment by editing `problemset1.Rmd`. 
+
+2. Replace the "Insert Your Name Here" text in the `author:` field with your own full name. Any collaborators must be listed on the top of your assignment. 
+
+3. Be sure to include well-documented (e.g. commented) code chucks, figures and clearly written text chunk explanations as necessary. Any figures should be clearly labeled and appropriately referenced within the text. 
+
+4. Collaboration on problem sets is acceptable, and even encouraged, but each student must turn in an individual write-up in his or her own words and his or her own work. The names of all collaborators must be listed on each assignment. Do not copy-and-paste from other students' responses or code.
+
+5. When you have completed the assignment and have **checked** that your code both runs in the Console and knits correctly when you click `Knit PDF`, rename the R Markdown file to `YourLastName_YourFirstName_ps1.Rmd`, knit a PDF and submit the PDF file on Canvas.
+
+##### Setup: #####
+
+In this problem set you will need, at minimum, the following R packages.
+
+```{r Setup, message=FALSE}
+# Load standard libraries
+library(statnet)
+
+# Load data
+load("problemset1_data.Rdata")
+ls() # Print objects in workspace to see what is available
+```
+
+#### Problem 1: Two-Mode Network Data ####
+
+After loading the data for this problem set, you can use the `ls()` command to reveal the object `sw.incidence` This is the incidence matrix for the famous "Southern Women" dataset from Davis, Gardner, and Gardner's 1941 study of class and social interaction in the Deep South[^2]. The matrix shows the attendance of 18 women at 14 informal social events during a nine-month observation period, based on various data sources such as interviews, guest lists, and participant observation. This is clearly two-mode data, with individuals as the "row vertices" and events as the "column vertices".
+
+[^2]:  Davis, Gardner, and Gardner.  (1941) \emph{Deep South}. Chicago: The University of Chicago Press.
+
+##### (a) Exploring Network Data ##### 
+
+Begin by printing the matrix, and plotting it using `plot.sociomatrix`. Who seems to be the most active? Are all the women active in the same events? Describe what you observe.
+
+```{r Two Mode Projection}
+
+# Printing the incidence matrix
+sw.incidence
+
+# Plotting the sociomatrix
+plot.sociomatrix(sw.incidence, cex.lab = 0.5, xlab = "Events", ylab = "Women")
+
+```
+
+• Evelyn, Theresa and Nora seems to be amongst the women who were most active in the social event during the nine month period, although their activities seems to be concentrated. Evelyn and Theresa were pretty active in the initial months, while on the other hand Nora wasn't so active at the start, but became a regular as since the early mid till the end of the nine month research period
+• Another intereseting observation that can be made is that the women which were studied during the research were divided into 2 groups, where one group was active in the social events during the start to mid of the reseach, while the other group of women became active during the mid to end of the research.
+• There are just 3 events in the middle of the research, events 7, 8 and 9, in which most of the women from both the groups attended together. In this event 8 was the most attended event, whereas the events 7 and 9 saw less number of women even though these were attended by women from both the groups
+
+##### (b) One-Mode Projections #####
+
+Consider how these women are connected through events. To do this, form the (valued) row projection of `sw.incidence` and say it as `sw.p2p`. You might find it helpfull to know that `%*%` is R's inner product operator, and `t()` is a function to transpose a matrix. `sw.p2p[i,j]` should now be the number of events that *i* and *j* have in common. Plot this matrix as in part (a) and answer the following:
+
+* What does the row projection tell us about how people are connected in this social group? 
+
+* Does the group seem to have subdivision? 
+
+* Do some members seem more "central" than others? If so, who?
+
+```{r One Mode Projection}
+
+# caluclate row projections by matrix multiplication of the incidence matrix with its transpose
+sw.p2p<-sw.incidence%*%t(sw.incidence)
+sw.p2p
+plot.sociomatrix(sw.p2p,cex.lab = 0.5)
+```
+
+• The row projection tells us that not all the people participating in the research show a strong relation with each other. There seems to be a concentration of a connection among people at two seperate points where most of the women can be categorized. While some women seems to be connected with all the other women to some extent
+• As explained above, the row projection tells us that people attending these social events were mainly categorized into two groups. The sociomatrix plot of the one-mode matrix shows that Evelyn, Laura, Theresa and Brenda, Harlotte and Francis were the women who could be categorized into the first group as they had many event common between them. On the other hand, Myrna, Catherie, Sylvia, Nora, Helen and Dorothy may be considered as another group having many common events between them.
+
+• Some members do seem more central than others in terms of betweenness where some women like Helen, Nora, Evelyn seem to have a high betweenness as they attend social events which are attended by women from both the groups, as well as events which are attended by women of their own group, thus serving as a gateway between those 2 groups.
+
+##### (c) Entailment Structures #####
+
+Now, we are going to explore the \emph{entailment structures} of women and events. We can construct a row-wise entailment matrix using the following code. The new matrix will be a person by person matrix such that `sw.r.entail[i,j]==1` if person $j$ attends all of person $i$'s events. 
+
+Use this function to create the entailment matrices (row-wise and column-wise) and produce a visualization of the entailment network for each case.
+
+```{r} 
+# Code to determine the row-wise entailment structure
+# Create a new empty matrix
+sw.r.entail <- matrix(0, nc=nrow(sw.incidence), nr=nrow(sw.incidence))
+# Populate the matrix using a nested 'for' loop
+for (i in 1:nrow(sw.incidence)){ # Pick an women i
+  for (j in 1:nrow(sw.incidence)){ # And and women j
+    sw.r.entail[i,j] <- all(sw.incidence[j,] >= sw.incidence[i,]) # Compare them 
+  }
+}
+rownames(sw.r.entail) <- rownames(sw.incidence) # Renames the nodes
+colnames(sw.r.entail) <- rownames(sw.incidence)
+# Plot the row-wise entailment structure
+gplot(sw.r.entail, label=rownames(sw.r.entail), label.cex=.7, 
+      boxed.labels=FALSE, vertex.cex=1.5)
+```
+
+```{r} 
+# Code to determine the column-wise entailment structure
+# Create a new empty matrix
+sw.c.entail <- matrix(0, nc=ncol(sw.incidence), nr=ncol(sw.incidence))
+# Populate the matrix using a nested 'for' loop
+for (i in 1:ncol(sw.incidence)){ # Pick an women i
+  for (j in 1:ncol(sw.incidence)){ # And and women j
+    sw.c.entail[i,j] <- all(sw.incidence[,j] >= sw.incidence[,i]) # Compare them 
+  }
+}
+rownames(sw.c.entail) <- colnames(sw.incidence) # Renames the nodes
+colnames(sw.c.entail) <- colnames(sw.incidence)
+
+# Plot the columne-wise entailment structure
+gplot(sw.c.entail, label=rownames(sw.c.entail), label.cex=.7, 
+      boxed.labels=FALSE, vertex.cex=1.5)
+```
+
+Use the matrices and visualizations to answer:
+
+* What does a path tell us?
+
+* What do mutual (i.e. bidirectional) dyads mean?
+
+* What is special about isolates?
+
+•  A path in the entailment network, first we take the row wise entailment network, tells us when one woman attends all of another women's events but the reverse may not be true. Explaining it with an example in the row entailment network, if we take an example of Myrna, Catherine and Sylvia, the path is directed from Myrna to Catherine and from Catherine to Sylvia indicates that the events attended by Olivia are a subset of all the events attended by Nora. Taking the case of column wise entailment network, a path indicates the association that all the women in that event is a subset of all the women attending another event but the reverse may not be true. Taking an example in this case, all the women attending the event E4 are included in the the total number of women attending event E3 and all the women attending the event E3 are included in the the total number of women attending event E5
+
+• A bidirectional dyad in terms of entailment, specifically row wise entailment, mean that the events attended by a woman are included in all of the events attended by another woman, and the reverse is also true, which in short implies that both the women have attended the same set of event. Taking the example of Olivia an FLora, all the events attended by Olivia and Flora are the same. Similarly in case of column wise entailment, a birectional dyad imply that all the women who attended one event is inlcuded in all the women who attended the second event, that is both the events are attended by the same women.
+
+• A Spciality about isolates in terms of women isolates is that these women have attended events that were not all commom to any one particular women. Thus they might have a high degree of relation to a diverse group of women. In terms of events, the isolates signify that the women who attended these events were not common to other events, that is a diverse group of women have attended those events.
+
+#### Problem 2: Node-Level Indices and Hypothesis Tests ####
+
+In the data for this assignment, you will find the following network objects: `silsys.ad.ilas` and `silsys.fr.ilas`. These are network objects containing data from David Krackhardt's famous Silican Valley Systems study.[^3] The two networks consist of advice-seeking ties and friendship ties (respectively). In addition each network contains several other attributes.
+
+[^3]: Krackhardt, David. (1990) "Assessing the Political Landscape: Structure, Cognition, and Power in Organizations." \emph{ASQ}, 35(2): 342-369.
+
+##### (a) Computing Node-Level Indices #####
+
+Compute indegree, outdegree, betweenness and eigenvector centrality scores for all individuals in each of the two networks. A useful trick to combine vectors or matrices `a`, `b`, and `c` into a single matrix using the `cbind` command as follows: `cbind(a,b,c)`. Print the centrality scores.
+
+* Who are some of the most central individuals in the advice-seeking network? In the friendship network?
+
+```{r }
+
+#calculate indegree, outdegree, betweenness and eigenvector centrality scores in advice-seeking network
+ideg<-degree(silsys.ad.ilas, cmode="indegree")
+odeg<-degree(silsys.ad.ilas, cmode="outdegree")
+bet<-betweenness(silsys.ad.ilas,gmode="graph")
+evc<-evcent(silsys.ad.ilas,gmode = "digraph")
+
+#combine all centrality scores into a matrix form
+ad_cent<-cbind(Indegree=ideg,Outdegree=odeg,Betweenness=bet,EigenvectorCentrality=evc)
+ad_cent
+```
+
+Advice-seeking network:
+• For indegree centrality, person 5 and 19 are most central as they have a high number of ties coming in, in this case 19 each
+• For outdegree centrality, person 13 and 25 are the most central, as they have a high number of ties going out to other people, in this case 15 each.
+• Betweenness is the highest in person 19 with a score or 185.46 while it is also high for person 24 with a value 95.35, which indicates that they serve in the position of a gatekeeper.
+• Eigenvector centrality is high for person 25 and 13
+
+```{r }
+
+#calculate indegree, outdegree, betweenness and eigenvector centrality scores in friendship network
+ideg<-degree(silsys.fr.ilas, cmode="indegree")
+odeg<-degree(silsys.fr.ilas, cmode="outdegree")
+bet<-betweenness(silsys.fr.ilas,gmode="graph")
+evc<-evcent(silsys.fr.ilas,gmode = "digraph")
+
+#combine all centrality scores into a matrix form
+fr_cent<-cbind(Indegree=ideg,Outdegree=odeg,Betweenness=bet,EigenvectorCentrality=evc)
+fr_cent
+```
+Friendship network:
+• For indegree centrality, person 29 is most central as it has a high number of ties coming in.
+• For outdegree centrality, person 20 and 29 are the most central, as they have a high number of ties going out to other people.
+• Betweenness is the highest in person 29 with a score or 101.94 while it is also high for person 35 with a value 84.59, which indicates that they serve in the position of a gatekeeper.
+• Eigenvector centrality is high for person 29 and 20
+
+##### (b) Comparing Node-Level Indices #####
+
+The `cor` command calculates correlations. You can apply this function to a matrix to compute the correlation matrix - correlations for all pairs of columns. Compute the within and between network correlation matrices for the centrality scores you computed in part (a). Print this table and answer the following:
+
+* Does centrality in the advice-seeking network correspond (or not) to centrality in the friendship network?
+
+* What centrality measures are most strong correlated? Least strongly correlated?
+
+```{r }
+
+#calculate correlation within advice-seeking network correlation matrix
+cat("correlation within advice-seeking network correlation matrix\n")
+cor(ad_cent)
+
+#calculate correlation within friendship network correlation matrix
+cat("\ncorrelation within friendship network correlation matrix\n")
+cor(fr_cent)
+
+#calculate correlation between advice-seeking and friendship network correlation matrices
+cat("\ncorrelation between advice-seeking and friendship network correlation matrices\n")
+cor(ad_cent,fr_cent)
+```
+• The result of the correlation suggests that the centrality measure in the advice seeking network does not correspond to the centrality measure in the friendship network. This is due to the low correlation results. This means that the people who are more central in the advice-seeking network might not be equally central in the friendship network and vice-versa.
+• Here we can see that in genral all the centrality measures of the friendship network are strongly correlated to each other. If we take some of the most strongly correlated centrality measures, they are the correlation between Enigenvector centrality and Outdegree(0.94) in the advice-seeking network, Enigenvector centrality and Outdegree(0.91) which are among the friendship network, Betweenness and Betweenness in the correaltion between both networks. Also, the least correlated centrality measures are indegree and eigenvector centrality(0.16) in the advice-seeking network, betweenness and eigenvector centrality(0.66) in the friendship network, eigenvector centrality and eigenvector centrality(0.006) in the correlation between advice-seeking and friendship network.
+
+##### (c) Relating Node-Level Indices to Covariates #####
+
+In the in-class demo you were given a function for testing the correlation between vectors using a permutation test. Using this function, assess the relationship between the "Charisma" (charisma, as rated by fellow employees) and "Potency" (ability to overcome opposition in order to achieve goals, as rated by fellow employees) vertex attributes and the centrality scores you computed in part (a). 
+
+Remember you can extract vertex attributes from network objects with the `%v%` operator or the `get.vertex.attribute` function. Report the results of these tests as a table showing the observed correlation of each attribute with each centrality measure, along with the two-sided $p$-value for the appropriate test in each case. 
+
+```{r}
+
+#retrience potency and charisma values from advice-seeking network
+advice_network<-silsys.ad.ilas
+advice_potency<-get.vertex.attribute(x = advice_network,attrname = "Potency")
+advice_Charisma<-get.vertex.attribute(x = advice_network,attrname = "Charisma")
+cat("Charisma in advice seeking netwrok:\n",advice_Charisma)
+cat("\nPotency in advice seeking netwrok:\n",advice_potency)
+
+#retrience potency and charisma values from friends network
+fr_network<-silsys.fr.ilas
+fr_potency<-get.vertex.attribute(x = fr_network,attrname = "Potency")
+fr_charisma<-get.vertex.attribute(x = fr_network,attrname = "Charisma")
+cat("\nCharisma in friendship netwrok:\n",fr_charisma)
+cat("\nPotency in friendship netwrok:\n",fr_potency)
+```
+
+```{r}
+perm.cor.test<-function(x,y,niter=5000){  #Define a simple test function
+  c.obs<-cor(x,y,use="complete.obs")
+  c.rep<-vector()
+  c.two_sided<-vector()
+  for(i in 1:niter)
+    c.rep[i]<-cor(x,sample(y),use="complete.obs")
+  cat("Vector Permutation Test:\n\tObserved correlation: ",
+      c.obs,"\tReplicate quantiles (niter=",niter,")\n",sep="")
+  cat("\t\tPr(rho>=obs):",mean(c.rep>=c.obs),"\n")
+  cat("\t\tPr(rho<=obs):",mean(c.rep<=c.obs),"\n")
+  cat("\t\tPr(|rho|>=|obs|):",mean(abs(c.rep)>=abs(c.obs)),"\n")
+  invisible(list(obs=c.obs, rep=c.rep, two_sided_prob=mean(abs(c.rep)>=abs(c.obs))))
+}
+```
+
+```{r}
+
+#correlation between friendship network and Charisma vectors using permutation text
+fr_c_in<-perm.cor.test(fr_charisma,fr_cent[,"Indegree"])
+fr_c_out<-perm.cor.test(fr_charisma,fr_cent[,"Outdegree"])
+fr_c_bet<-perm.cor.test(fr_charisma,fr_cent[,"Betweenness"])
+fr_c_eig<-perm.cor.test(fr_charisma,fr_cent[,"EigenvectorCentrality"])
+```
+```{r}
+#correlation between friendship network and Potency vectors using permutation text
+fr_pot_in<-perm.cor.test(fr_potency,fr_cent[,"Indegree"])
+fr_pot_out<-perm.cor.test(fr_potency,fr_cent[,"Outdegree"])
+fr_pot_bet<-perm.cor.test(fr_potency,fr_cent[,"Betweenness"])
+fr_pot_eig<-perm.cor.test(fr_potency,fr_cent[,"EigenvectorCentrality"])
+``` 
+
+```{r}
+
+#correlation between advice-seeking network and potency vectors using permutation text
+ad_pot_in<-perm.cor.test(advice_potency,ad_cent[,"Indegree"])
+ad_pot_out<-perm.cor.test(advice_potency,ad_cent[,"Outdegree"])
+ad_pot_bet<-perm.cor.test(advice_potency,ad_cent[,"Betweenness"])
+ad_pot_eig<-perm.cor.test(advice_potency,ad_cent[,"EigenvectorCentrality"])
+```
+
+```{r}
+
+#correlation between advice-seeking network and charisma vectors using permutation text
+ad_c_in<-perm.cor.test(advice_Charisma,ad_cent[,"Indegree"])
+ad_c_out<-perm.cor.test(advice_Charisma,ad_cent[,"Outdegree"])
+ad_c_bet<-perm.cor.test(advice_Charisma,ad_cent[,"Betweenness"])
+ad_c_eig<-perm.cor.test(advice_Charisma,ad_cent[,"EigenvectorCentrality"])
+```
+
+```{r}
+
+#form a table of all the the observed correlation of each attribute with each centrality measure, along with the two-sided probability-value for the appropriate test in each case
+rbind(Indegree_Potency_Friends=fr_pot_in,Outdegree_Potency_Friends=fr_pot_out,
+      Betweenness_Potency_friends=fr_pot_bet,Eigenvector_Potency_Freinds=fr_pot_eig,
+      Indegree_Charisma_Friends=fr_c_in,Outdegree_Charisma_Friends=fr_c_out,
+      Betweenness_Charsima_Friends=fr_c_bet,Eigenvector_Charisma_Friends=fr_c_eig,
+      Indegree_Potency_Advisor=ad_pot_in,Outdegree_Potency_Advisor=ad_pot_out,
+      Betweenness_Potency_Advisor=ad_pot_bet,Eigenvector_Potency_Advisor=ad_pot_eig,
+      Indegree_Charisma_Advisor=ad_c_in,Outdegree_Charisma_Advisor=ad_c_out,
+      Betweenness_Charisma_Advisor=ad_c_bet, Eigenvector_Charisma_Advisor=ad_c_eig)
+```
+* How to charisma and potency appear to relate to positional structure at Silicon Valley Systems?
+
+• The positional structure at Silicon Valley Systems relate to the charisma and potency such that the in the advice seeking ties, based on the probability and correlation values, the person rated highly potent by its fellow employees has a high indegree values

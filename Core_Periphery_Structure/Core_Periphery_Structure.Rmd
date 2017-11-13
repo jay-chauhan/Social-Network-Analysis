@@ -1,0 +1,216 @@
+---
+title: 'INFX 576: Problem Set 4 - Core/Periphery Structure\footnote{Problems originally written by C.T. Butts (2009)}'
+author: "Jay Chauhan"
+date: 'Due: Thursday, February 9, 2017'
+output: pdf_document
+---
+
+##### Collaborators: Avanti Chande, Gossudin Siddiqi
+
+##### Instructions: #####
+
+Before beginning this assignment, please ensure you have access to R and RStudio. 
+
+1. Download the `problemset4.Rmd` file from Canvas. You will also need the data contained in `problemset4_data.Rdata` and the `block.fit` function we used in class.  
+
+2. Replace the "Insert Your Name Here" text in the `author:` field with your own full name. Any collaborators must be listed on the top of your assignment. 
+
+3. Be sure to include well-documented (e.g. commented) code chucks, figures and clearly written text chunk explanations as necessary. Any figures should be clearly labeled and appropriately referenced within the text. 
+
+4. Collaboration on problem sets is acceptable, and even encouraged, but each student must turn in an individual write-up in his or her own words and his or her own work. The names of all collaborators must be listed on each assignment. Do not copy-and-paste from other students' responses or code.
+
+5. When you have completed the assignment and have **checked** that your code both runs in the Console and knits correctly when you click `Knit PDF`, rename the R Markdown file to `YourLastName_YourFirstName_ps4.Rmd`, knit a PDF and submit the PDF file on Canvas.
+
+##### Setup: #####
+
+In this problem set you will need, at minimum, the following R packages.
+
+```{r Setup, message=FALSE}
+# Load standard libraries
+library(statnet)
+load("problemset4_data.Rdata")
+load("block.fit.Rdata")
+```
+
+#### Problem 1:  Core/Periphery Structure
+
+In this problem we will use data from a famous series of studies by Bernard, Killworth, and Sailer[^2] on the relationship between observed interaction and informants self-reports of interaction. The specific networks we will use here are from the "behavioral" side, meaning that the $i,j$ cell corresponds to the number of times $i$ and $j$ were *observed* to interact during the data collection period. All interaction is these studies is interpersonal; the study contexts are: (1) communication among radio operators (`bfham`), (2) face-to-face interactions among members of a fraterity (`bkfrat`), (3) face-to-face interactions in a university research group (`bktec`), and (4) face-to-face interactions in a small business (`bkoff`). Here we investigate the possibility of latent two-class structure in these interation networks. 
+
+[^2]: Bernard H, Killworth P and Sailer L. (1982). Informant accuracy in social network data V. Social Science Research, 11, 30-66.
+
+
+##### (a) Network Visualization
+
+To begin visualize each network. You might find it helpful to use transparency when displaying edges using the `edge.col=rgb(0,0,0,0.5)` option of the `gplot` function. Based on each visualization, indicate whether there appears to be a two-class block structure present, and if so what it might be.
+
+```{r}
+
+#plot the networks BKHAM
+gplot(bkham,edge.col=rgb(0,0,0,0.5), main="BKHAM")
+#plot the networks BKFRAT
+gplot(bkfrat,edge.col=rgb(0,0,0,0.5), main="BKFRAT")
+#plot the networks BKTEC
+gplot(bktec,edge.col=rgb(0,0,0,0.5), main="BKTEC")
+#plot the networks BKOFF
+gplot(bkoff,edge.col=rgb(0,0,0,0.5), main="BKOFF")
+```
+• Looking at the networks, the network appears to be a two class block structure, specifically, a core-periphery structure.
+
+
+##### (b) Blockmodels
+
+For each of the BKS networks, fit each of the four non-degrenerate undirected two-class blockmodels. (You may omit the null graph and complete graph blockmodels.) In addition, fit the Borgatti and Everett variant in which only within-class edges are considered. Plot each blocked data matrix with the `plot.sociomatrix` function. Comment on your results.
+
+```{r}
+
+#calculate core w/in,out ties in BKHAM
+bkham_kb1<-block.fit(bkham,c(1,1,1,0))
+bkham_kb1lab<-bkham_kb1$block.membership[bkham_kb1$order.vector]
+
+#calculate ties between core and periphery in BKHAM
+bkham_kb2<-block.fit(bkham,c(0,1,1,0))
+bkham_kb2lab<-bkham_kb1$block.membership[bkham_kb2$order.vector]
+
+#calculate isolated core ties in BKHAM
+bkham_kb3<-block.fit(bkham,c(1,0,0,0))
+bkham_kb3lab<-bkham_kb1$block.membership[bkham_kb3$order.vector]
+
+#calculate core and periphery within ties in BKHAM
+bkham_kb4<-block.fit(bkham,c(1,0,0,1))
+bkham_kb4lab<-bkham_kb1$block.membership[bkham_kb4$order.vector]
+
+
+#calculate core w/in,out ties in BKFRAT
+bkfrat_kb1<-block.fit(bkfrat,c(1,1,1,0))
+bkfrat_kb1lab<-bkfrat_kb1$block.membership[bkfrat_kb1$order.vector]
+
+#calculate ties between core and periphery in BKFRAT
+bkfrat_kb2<-block.fit(bkfrat,c(0,1,1,0))
+bkfrat_kb2lab<-bkfrat_kb1$block.membership[bkfrat_kb2$order.vector]
+
+#calculate isolated core ties in BKFRAT
+bkfrat_kb3<-block.fit(bkfrat,c(1,0,0,0))
+bkfrat_kb3lab<-bkfrat_kb1$block.membership[bkfrat_kb3$order.vector]
+
+#calculate core and periphery within ties in BKFRAT
+bkfrat_kb4<-block.fit(bkfrat,c(1,0,0,1))
+bkfrat_kb4lab<-bkfrat_kb1$block.membership[bkfrat_kb4$order.vector]
+
+#calculate core w/in,out ties in BKTEC
+bktec_kb1<-block.fit(bktec,c(1,1,1,0))
+bktec_kb1lab<-bktec_kb1$block.membership[bktec_kb1$order.vector]
+
+#calculate ties between core and periphery in BKTEC
+bktec_kb2<-block.fit(bktec,c(0,1,1,0))
+bktec_kb2lab<-bktec_kb1$block.membership[bktec_kb2$order.vector]
+
+#calculate isolated core ties in BKTEC
+bktec_kb3<-block.fit(bktec,c(1,0,0,0))
+bktec_kb3lab<-bktec_kb1$block.membership[bktec_kb3$order.vector]
+
+#calculate core and periphery within ties in BKTEC
+bktec_kb4<-block.fit(bktec,c(1,0,0,1))
+bktec_kb4lab<-bktec_kb1$block.membership[bktec_kb4$order.vector]
+
+
+#calculate core w/in,out ties in BKOFF
+bkoff_kb1<-block.fit(bkoff,c(1,1,1,0))
+bkoff_kb1lab<-bkoff_kb1$block.membership[bkoff_kb1$order.vector]
+
+#calculate ties between core and periphery in BKOFF
+bkoff_kb2<-block.fit(bkoff,c(0,1,1,0))
+bkoff_kb2lab<-bkoff_kb1$block.membership[bkoff_kb2$order.vector]
+
+#calculate isolated core ties in BKOFF
+bkoff_kb3<-block.fit(bkoff,c(1,0,0,0))
+bkoff_kb3lab<-bkoff_kb1$block.membership[bkoff_kb3$order.vector]
+
+#calculate core and periphery within ties in BKOFF
+bkoff_kb4<-block.fit(bkoff,c(1,0,0,1))
+bkoff_kb4lab<-bkoff_kb1$block.membership[bkoff_kb4$order.vector]
+
+```
+
+
+```{r}
+
+#plot soiomatrix of all the networks with model having configuration(1,1,1,0)
+plot.sociomatrix(bkham_kb1$blocked.data,labels = list(bkham_kb1lab,bkham_kb1lab))
+plot.sociomatrix(bkfrat_kb1$blocked.data, labels = list(bkfrat_kb1lab,bkfrat_kb1lab))
+plot.sociomatrix(bktec_kb1$blocked.data, labels = list(bktec_kb1lab,bktec_kb1lab))
+plot.sociomatrix(bkoff_kb1$blocked.data, labels = list(bkoff_kb1lab,bkoff_kb1lab))
+
+
+#plot soiomatrix of all the networks with model having configuration(0,1,1,0)
+plot.sociomatrix(bkham_kb2$blocked.data,labels = list(bkham_kb2lab,bkham_kb2lab))
+plot.sociomatrix(bkfrat_kb2$blocked.data, labels = list(bkfrat_kb2lab,bkfrat_kb2lab))
+plot.sociomatrix(bktec_kb2$blocked.data, labels = list(bktec_kb2lab,bktec_kb2lab))
+plot.sociomatrix(bkoff_kb2$blocked.data, labels = list(bkoff_kb2lab,bkoff_kb2lab))
+
+#plot soiomatrix of all the networks with model having configuration(1,0,0,0)
+plot.sociomatrix(bkham_kb3$blocked.data,labels = list(bkham_kb3lab,bkham_kb3lab))
+plot.sociomatrix(bkfrat_kb3$blocked.data, labels = list(bkfrat_kb3lab,bkfrat_kb3lab))
+plot.sociomatrix(bktec_kb3$blocked.data, labels = list(bktec_kb3lab,bktec_kb3lab))
+plot.sociomatrix(bkoff_kb3$blocked.data, labels = list(bkoff_kb3lab,bkoff_kb3lab))
+
+#plot soiomatrix of all the networks with model having configuration(1,0,0,1)
+plot.sociomatrix(bkham_kb4$blocked.data,labels = list(bkham_kb4lab,bkham_kb4lab))
+plot.sociomatrix(bkfrat_kb4$blocked.data, labels = list(bkfrat_kb4lab,bkfrat_kb4lab))
+plot.sociomatrix(bktec_kb4$blocked.data, labels = list(bktec_kb4lab,bktec_kb4lab))
+plot.sociomatrix(bkoff_kb4$blocked.data, labels = list(bkoff_kb4lab,bkoff_kb4lab))
+```
+• The first network, which depicts the communication between the radio operators, the core-periphery structure is pretty prominent. There is a clear distinction between the core and the periphery, with a densely connected connected core and the periphery connecte with the core, and less withng periphery connections.
+
+The network for interactions among members of a fraterity and interactions in a university research group also has a core-periphery structure, with a densely connected core, but having a greater connection between the periphery nodes.
+
+In the network of interaction between small businesses, the core-periphery structure is less prominent, based on the observations from it's sociomatrix
+
+• Here we observe that the core-periphery interations varies widely in each of the four network. The core-periphery interaction is the least in BKHAM network, and the interaction keeps on increasing in the networks BHFRAT,BKTEC and BKOFF in that order
+
+• The within  core interactions are very prominent in the the BKHAM network, and the BKTEC network, whereas in other networks, there are core interactions, but not very prominent.
+
+•The network BKHAM exhibits mainly witing core interaction, where as the networks BKFRAT and BKTEC exhibits within core as well as within periphery interactions. The network BKTEC has a within periphery interactions which are more prominent that within core interactions
+
+##### (c) Goodness-of-Fit
+
+Examine the goodness-of-fit scores (in this case, maximized correlations) for each model on each network. Which model fits best (among those which seek to explain all edges)? How much variance is accounted for by each model?
+
+• Analyzing the goodness-of-fit scores among the models which explain all the ties, we get the model 'core with in and out ties' which is fits best in the BKFRAT network.
+• The variance accounted for by the model with configuration (1,1,1,0): 21% to 42%
+• The variance accounted for by the model with configuration (0,1,1,0):16% to 37%
+• The variance accounted for by the model with configuration (1,0,0,0):36% to 69%
+• The variance accounted for by the model with configuration (1,0,0,1):19% to 31%
+
+```{r}
+
+#print goodness of fit of for all configurations of BKHAM network
+bkham_kb1$block.gof
+bkham_kb2$block.gof
+bkham_kb3$block.gof
+bkham_kb4$block.gof
+
+#print goodness of fit of for all configurations of BKFRAT network
+bkfrat_kb1$block.gof
+bkfrat_kb2$block.gof
+bkfrat_kb3$block.gof
+bkfrat_kb4$block.gof
+
+#print goodness of fit of for all configurations of BKTEC network
+bktec_kb1$block.gof
+bktec_kb2$block.gof
+bktec_kb3$block.gof
+bktec_kb4$block.gof
+
+#print goodness of fit of for all configurations of BKOFFF network
+bkoff_kb1$block.gof
+bkoff_kb2$block.gof
+bkoff_kb3$block.gof
+bkoff_kb4$block.gof
+
+```
+
+##### (c) Discussion
+
+Based on the above results, how would you describe the overall structure of these data sets? Are they ultimately similar in form or are there notable differences?
+
+• As per the above results, we can see that the overall structure of the BKOFF dataset is less tending towards a core-periphery structure, whereas the other 3 networks which are the BKHAM, BKFRAT and BKTEC are showing similar structure in all the models.
